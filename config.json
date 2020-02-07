@@ -1,0 +1,71 @@
+{
+	"locations": [
+		"new york",
+		"san francisco",
+		"brampton",
+		"whitby", 
+		"newmarket", 
+		"barrie", 
+		"toronto",
+		"mississauga",
+		"waterloo",
+		"kitchener",
+		"pickering",
+		"aurora"
+	],
+	"headers": [
+		"Source",
+		"Store ID",
+		"Store Name",
+		"Intersection / City",
+		"Phone",
+		"Price",
+		"Quantity",
+		"Status"
+	],
+	"walmart": {
+		"productId": "62891574558",
+		"storeLocatorAPI": "https://www.walmart.ca/en/stores-near-me/api/searchStores?singleLineAddr=",
+		"storeStockAPI": "https://www.walmart.ca/api/product-page/find-in-store?&lang=en&upc=",		
+		"attributes": [
+			"id", 
+			"displayName", 
+			"intersection", 
+			"",
+			"sellPrice", 
+			"availableToSellQty", 
+			"availabilityStatus"
+		]
+	},
+	"staples": {
+		"productId": "707506",
+		"storeStockAPI": "https://staplescms.staples.ca/api/pickupinstore",
+		"attributes": [
+			"storeNumber",
+			"addressLine",
+			"city",
+			"phoneNumber",
+			"",
+			"availableqty",
+			""
+		]
+	},
+	"cvs": {
+		"productId": "310410",
+		"storeStockAPI": "https://www.cvs.com/RETAGPV1/Inventory/V1/getStoreDetailsAndInventory",
+		"attributes": [
+			"storeId",
+			"storeAddress",
+			"City",
+			"Phonenumber",
+			"",
+			"Qty",
+			"bohStatus"
+		]
+	},
+	"walgreens": {
+		"productId": "sku6231526",
+		"storeStockAPI": "https://www.walgreens.com/locator/v1/search/stores/inventory"
+	}
+
+}
