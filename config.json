@@ -1,20 +1,25 @@
 {
-	"locations": [
-		"new york",
-		"san francisco",
-		"brampton",
-		"whitby", 
-		"newmarket", 
-		"barrie", 
-		"toronto",
-		"mississauga",
-		"waterloo",
-		"kitchener",
-		"pickering",
-		"aurora"
-	],
+	"locations": {
+		"CA": [
+			"brampton",
+			"whitby", 
+			"newmarket", 
+			"barrie", 
+			"toronto",
+			"mississauga",
+			"waterloo",
+			"kitchener",
+			"pickering",
+			"aurora"
+		],
+		"US": [
+			"new york",
+			"san francisco"
+		]
+	},
 	"headers": [
 		"Source",
+		"Product ID",
 		"Store ID",
 		"Store Name",
 		"Intersection / City",
@@ -24,11 +29,12 @@
 		"Status"
 	],
 	"walmart": {
-		"productId": "62891574558",
+		"productId": ["62891574558","7385202778"],
 		"storeLocatorAPI": "https://www.walmart.ca/en/stores-near-me/api/searchStores?singleLineAddr=",
 		"storeStockAPI": "https://www.walmart.ca/api/product-page/find-in-store?&lang=en&upc=",		
 		"attributes": [
-			"id", 
+			"productId",
+			"id", 			
 			"displayName", 
 			"intersection", 
 			"",
@@ -38,9 +44,10 @@
 		]
 	},
 	"staples": {
-		"productId": "707506",
+		"productId": ["707506","45717"],
 		"storeStockAPI": "https://staplescms.staples.ca/api/pickupinstore",
 		"attributes": [
+			"productId",
 			"storeNumber",
 			"addressLine",
 			"city",

@@ -4,10 +4,9 @@ const config = require("./config.json");
 
 async function getAllStoreLatLng() {
 	let result = [];
-	for(let i=0; i < config.locations.length; i++) {
+	for(let i=0; i < config.locations.CA.length; i++) {
 		try {
-			let response = await axios.get(config.walmart.storeLocatorAPI + config.locations[i]);
-			// console.log(response.data);
+			let response = await axios.get(config.walmart.storeLocatorAPI + config.locations.CA[i]);
 			if(response.data && response.data.code === 200) {
 				let chunk = response.data.payload.stores.map(s => {
 					return {
@@ -28,21 +27,28 @@ async function getAllStoreLatLng() {
 
 async function getStockFromLatLngs(latlngs) {
 	let result = [];
-	for(let i=0; i<latlngs.length; i++) {
-		try {
-			let lat = latlngs[i].latitude;
-			let lng = latlngs[i].longitude;
-			let response = await axios.get(`${config.walmart.storeStockAPI}${config.walmart.productId}&latitude=${lat}&longitude=${lng}`);
+	for(let j = 0; j < config.walmart.productId.length; j++) {
+		for(let i = 0; i<latlngs.length; i++) {
+			try {
+				let lat = latlngs[i].latitude;
+				let lng = latlngs[i].longitude;
+				let response = await axios.get(`${config.walmart.storeStockAPI}${config.walmart.productId[j]}&latitude=${lat}&longitude=${lng}`);
 
-			if(response.data && response.data.info) {
-				// console.log(response.data);
-				let hasStock = response.data.info.filter(store => store.availableToSellQty > 0 || store.availabilityStatus !== "OUT_OF_STOCK");
-				result.push(...hasStock);
-				// console.log(`${i} of ${latlngs.length}`);
+				if(response.data && response.data.info) {
+					// console.log(response.data);
+					let hasStock = response.data.info
+						.filter(store => store.availableToSellQty > 0 || store.availabilityStatus !== "OUT_OF_STOCK")
+						.map(store => {
+							let withProductId = store;
+							withProductId.productId = config.walmart.productId[j];
+							return withProductId;
+						});
+					result.push(...hasStock);
+				}
 			}
-		}
-		catch(err) {
-			console.log("ERR", err);
+			catch(err) {
+				console.log("ERR", err);
+			}
 		}
 	}
 	return result;
@@ -56,11 +62,9 @@ function output(source, s, attributes) {
 	console.log(`${source},${str}`);
 }
 
-async function scrapeWalmart() {
+async function scrapeWalmartCA() {
 	let stores = dedupe(await getAllStoreLatLng(), ["displayName"]);
-	// console.log(stores);
-	let stocks = dedupe(await getStockFromLatLngs(stores), ["displayName"]);
-	// console.log(stocks);
+	let stocks = dedupe(await getStockFromLatLngs(stores), ["displayName","productId"]);
 	
 	if(stocks) {
 		stocks.forEach(s => output('Walmart', s, config.walmart.attributes));
@@ -68,11 +72,12 @@ async function scrapeWalmart() {
 }
 
 async function scrapeStaples() {
+	// staples uses radius that can be maxed, locations is not required
 	let data = {
-		"zipCode":"L4B 4M6",
-		"searchParam":"L4B 4M6",
+		"zipCode":"L3S 3J9",
+		"searchParam":"L3S 3J9",
 		"radius":10000,
-		"itemIds": [config.staples.productId],
+		"itemIds": config.staples.productId,
 		"tenantId":"StaplesCA",
 		"locale":"en-CA",
 		"immediatePickupOnly":false,
@@ -91,10 +96,15 @@ async function scrapeStaples() {
 
 	let response = await axios.post(config.staples.storeStockAPI, JSON.stringify(data), { headers: headers });
 	if(response && response.data && response.data.pickInStoreDetails && response.data.pickInStoreDetails.length > 0){
-		let details = response.data.pickInStoreDetails[0];
+		
+		response.data.pickInStoreDetails.forEach(details => {
+		// let details = response.data.pickInStoreDetails[0];
 
-		details.store.forEach(s => output('Staples', s, config.staples.attributes));
-
+			details.store.forEach(s => {
+				s.productId = details.item.itemId;
+				output('Staples', s, config.staples.attributes)
+			});
+		});
 	}
  }
 
@@ -108,8 +118,8 @@ async function scrapeStaples() {
  		}
  	};
 
- 	for(let i=0; i < config.locations.length; i++) {
- 		data.addressLine = config.locations[i];
+ 	for(let i=0; i < config.locations.US.length; i++) {
+ 		data.addressLine = config.locations.US[i];
  		let response = await axios.post(config.cvs.storeStockAPI, JSON.stringify(data));
  		// console.log(response.data);
 
@@ -120,8 +130,9 @@ async function scrapeStaples() {
  }
 
  async function scrapeWalgreens() {
+ 	// walgreens uses radius
  	let data = {
-	  "q": "New York, NY, USA",
+	  "q": config.locations.US[0],
 	  "requestType": "findAtYourLocal",
 	  "inStockOnly": "true",
 	  "skuId": config.walgreens.productId,
@@ -149,7 +160,20 @@ async function scrapeStaples() {
  }
 
 console.log(config.headers.reduce((a,c) => `${a}${c},`, ''));
-// scrapeWalmart();
-// scrapeStaples();
-scrapeCVS();
-scrapeWalgreens();
+
+function runCA() {
+	scrapeWalmartCA();
+	scrapeStaples();
+}
+
+function runUS() {
+	scrapeCVS();
+	scrapeWalgreens();
+}
+
+function runAll() {
+	runCA();
+	runUS();
+}
+
+runCA();
