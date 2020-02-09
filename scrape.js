@@ -2,7 +2,7 @@ const axios = require("axios");
 const dedupe = require("array-dedupe");
 const config = require("./config.json");
 
-async function getAllStoreLatLng() {
+async function getAllWalmartStores() {
 	let result = [];
 	for(let i=0; i < config.locations.CA.length; i++) {
 		try {
@@ -63,7 +63,7 @@ function output(source, s, attributes) {
 }
 
 async function scrapeWalmartCA() {
-	let stores = dedupe(await getAllStoreLatLng(), ["displayName"]);
+	let stores = dedupe(await getAllWalmartStores(), ["displayName"]);
 	let stocks = dedupe(await getStockFromLatLngs(stores), ["displayName","productId"]);
 	
 	if(stocks) {
@@ -71,40 +71,63 @@ async function scrapeWalmartCA() {
 	}
 }
 
+async function getAllStaplesStores() {
+	try {
+		let response = await axios.get(config.staples.storeLocatorAPI);
+		if(response.data && response.data.stores) {
+			return response.data.stores.map(s => s.postal_zip);
+		}
+	}
+	catch(err) {
+		console.log("getAllStaplesStores ERR:", err);
+	}
+}
+
 async function scrapeStaples() {
-	// staples uses radius that can be maxed, locations is not required
-	let data = {
-		"zipCode":"L3S 3J9",
-		"searchParam":"L3S 3J9",
-		"radius":10000,
-		"itemIds": config.staples.productId,
-		"tenantId":"StaplesCA",
-		"locale":"en-CA",
-		"immediatePickupOnly":false,
-		"action":"addToCart",
-		"isSTS":false,
-		"isStoreHours":true,
-		"yourStore":{"storeNumber":"155"}
-	};
+	let storePostalCodes = await getAllStaplesStores();
+	// console.log(storePostalCodes);
+	for(let i=0; i<storePostalCodes.length; i++) {
+		let data = {
+			"zipCode": storePostalCodes[i],
+			"searchParam": storePostalCodes[i],
+			"radius": 100,
+			"itemIds": config.staples.productId,
+			"tenantId":"StaplesCA",
+			"locale":"en-CA",
+			"immediatePickupOnly":false,
+			"action":"addToCart",
+			"isSTS":false,
+			"isStoreHours":true,
+			"yourStore":{"storeNumber":"155"}
+		};
 
-	let headers = {
-		"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36",
-		"content-type": "application/json",
-		"x-ibm-client-id": "94d817c8-21f4-4420-99b5-f6ba018d32bc",
-		"origin": "https://www.staples.ca"
-	};
+		let headers = {
+			"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36",
+			"content-type": "application/json",
+			"x-ibm-client-id": "94d817c8-21f4-4420-99b5-f6ba018d32bc",
+			"origin": "https://www.staples.ca"
+		};
 
-	let response = await axios.post(config.staples.storeStockAPI, JSON.stringify(data), { headers: headers });
-	if(response && response.data && response.data.pickInStoreDetails && response.data.pickInStoreDetails.length > 0){
-		
-		response.data.pickInStoreDetails.forEach(details => {
-		// let details = response.data.pickInStoreDetails[0];
-
-			details.store.forEach(s => {
-				s.productId = details.item.itemId;
-				output('Staples', s, config.staples.attributes)
-			});
-		});
+		try {
+			let response = await axios.post(config.staples.storeStockAPI, JSON.stringify(data), { headers: headers });
+			if(response && response.data && response.data.pickInStoreDetails && response.data.pickInStoreDetails.length > 0){
+				let res = [];				
+				response.data.pickInStoreDetails.forEach(details => {
+					if(details.store) {
+						details.store.forEach(s => {
+							s.productId = details.item.itemId;
+							// output('Staples', s, config.staples.attributes)							
+							res.push(s);
+							// console.log(res);
+						});
+					}
+				});
+				dedupe(res, ["storeNumber","productId"]).forEach(s => output('Staples', s, config.staples.attributes));
+			}
+		}
+		catch(err) {
+			console.error("scrapeStaples ERR:", err);
+		}
 	}
  }
 

@@ -45,6 +45,7 @@
 	},
 	"staples": {
 		"productId": ["707506","45717"],
+		"storeLocatorAPI": "https://stores.boldapps.net/front-end/get_surrounding_stores.php?shop=staples-canada.myshopify.com&latitude=43.8903747&longitude=-79.2359517&max_distance=1000&limit=100&calc_distance=1",
 		"storeStockAPI": "https://staplescms.staples.ca/api/pickupinstore",
 		"attributes": [
 			"productId",
